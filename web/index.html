@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chess Coach — play, learn, improve</title>
+  <meta name="description" content="A chess.com-inspired chess trainer with an adaptive 1–100 opponent, a live move coach and twelve interactive lessons. Browser build of the Chess Coach desktop app." />
+  <meta name="theme-color" content="#302E2B" />
+  <link rel="icon" href="assets/pieces/wN.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <nav class="rail" aria-label="Sections">
+      <a class="rail-logo" href="#" aria-label="Chess Coach">
+        <img src="assets/pieces/wN.svg" alt="" />
+      </a>
+      <button class="nav-btn is-active" type="button" data-page="play">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19 12z" fill="currentColor"/></svg>
+        <span>Play</span>
+      </button>
+      <button class="nav-btn" type="button" data-page="learn">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 5.6C4 4.2 5.2 3 6.6 3H11v15.6H6.6C5.2 18.6 4 19.8 4 21.2z" fill="currentColor"/>
+          <path d="M20 5.6C20 4.2 18.8 3 17.4 3H13v15.6h4.4c1.4 0 2.6 1.2 2.6 2.6z" fill="currentColor"/>
+        </svg>
+        <span>Learn</span>
+      </button>
+      <button class="nav-btn" type="button" data-page="settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true" class="stroke">
+          <path d="M4 7.5h6M14 7.5h6M4 16.5h10M18 16.5h2"/>
+          <circle cx="12" cy="7.5" r="2.4"/><circle cx="16" cy="16.5" r="2.4"/>
+        </svg>
+        <span>Settings</span>
+      </button>
+      <div class="rail-spacer"></div>
+      <span class="rail-dot" id="rail-dot" title="Engine status"></span>
+      <span class="rail-version">v1.0</span>
+    </nav>
+
+    <main class="pages">
+      <!-- ============================ PLAY ============================ -->
+      <section class="page is-active" id="page-play" aria-label="Play">
+        <div class="stage">
+          <div class="player-bar" id="bar-top"></div>
+          <div class="board-row">
+            <div class="evalbar" id="eval-bar" aria-hidden="true">
+              <div class="eval-track">
+                <div class="eval-fill" id="eval-fill"></div>
+                <div class="eval-mid"></div>
+              </div>
+            </div>
+            <div class="board-wrap">
+              <div class="board" id="board" role="grid" aria-label="Chess board"></div>
+              <div class="promotion" id="promotion" hidden>
+                <div class="promotion-card">
+                  <p>Promote to</p>
+                  <div class="promotion-options" id="promotion-options"></div>
+                  <button class="btn ghost" type="button" id="promotion-cancel">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="player-bar" id="bar-bottom"></div>
+        </div>
+
+        <aside class="sidebar">
+          <section class="card">
+            <header class="card-head">
+              <h2>New game</h2>
+              <span class="badge" id="engine-badge">Web engine</span>
+            </header>
+            <div class="level">
+              <div class="level-line">
+                <span class="muted small">Opponent level</span>
+                <span class="level-value" id="level-value">40</span>
+              </div>
+              <input id="level" type="range" min="1" max="100" value="40" aria-label="Opponent level" />
+              <div class="level-line small muted">
+                <span id="level-tier">Intermediate</span>
+                <span id="level-elo">~1600 Elo</span>
+              </div>
+            </div>
+            <div class="field">
+              <span class="field-label">Play as</span>
+              <div class="segmented" id="side-seg">
+                <button type="button" data-value="White" class="is-active">White</button>
+                <button type="button" data-value="Black">Black</button>
+                <button type="button" data-value="Random">Random</button>
+              </div>
+            </div>
+            <div class="field">
+              <span class="field-label">Time control</span>
+              <div class="segmented" id="time-seg">
+                <button type="button" data-value="Untimed" class="is-active">Untimed</button>
+                <button type="button" data-value="3+2">3+2</button>
+                <button type="button" data-value="10+0">10+0</button>
+              </div>
+            </div>
+            <button class="btn primary" type="button" id="new-game">New game</button>
+          </section>
+
+          <section class="card">
+            <header class="card-head">
+              <h2>Coach</h2>
+              <label class="switch" title="Coach mode">
+                <input type="checkbox" id="coach-toggle" checked />
+                <span class="switch-track"></span>
+              </label>
+            </header>
+            <div class="verdict" id="coach-card">
+              <span class="verdict-label" id="coach-label">Ready</span>
+              <p id="coach-text">Make a move and I&rsquo;ll tell you what I think of it.</p>
+            </div>
+            <div class="row-buttons">
+              <button class="btn" type="button" id="hint">
+                <svg viewBox="0 0 24 24" aria-hidden="true" class="stroke">
+                  <path d="M9.4 17.6h5.2M10.4 20.6h3.2"/>
+                  <path d="M12 3.4a6.2 6.2 0 0 1 3.6 11.2c-.6.4-.9 1-.9 1.7v1.3H9.3V16c0-.7-.3-1.3-.9-1.7A6.2 6.2 0 0 1 12 3.4z"/>
+                </svg>
+                Hint
+              </button>
+              <button class="btn" type="button" id="takeback">
+                <svg viewBox="0 0 24 24" aria-hidden="true" class="stroke">
+                  <path d="M8.5 6.5H4V2M4 6.5l3.6-3.2"/><path d="M4.4 6.6a8.6 8.6 0 1 1-1.6 7.1"/>
+                </svg>
+                Takeback
+              </button>
+            </div>
+          </section>
+
+          <section class="card moves-card">
+            <header class="card-head">
+              <h2>Moves</h2>
+              <button class="link" type="button" id="live" hidden>Back to live</button>
+            </header>
+            <div class="moves" id="moves"><p class="muted small">No moves yet.</p></div>
+            <div class="row-buttons">
+              <button class="btn" type="button" id="flip">
+                <svg viewBox="0 0 24 24" aria-hidden="true" class="stroke"><path d="M4 8.5h13l-3.4-3.4M20 15.5H7l3.4 3.4"/></svg>
+                Flip board
+              </button>
+              <button class="btn danger" type="button" id="resign">
+                <svg viewBox="0 0 24 24" aria-hidden="true" class="stroke"><path d="M6.5 21V3.5"/><path d="M6.5 4.2h9.8l-2.4 3.4 2.4 3.4H6.5z"/></svg>
+                Resign
+              </button>
+            </div>
+          </section>
+        </aside>
+      </section>
+
+      <!-- ============================ LEARN =========================== -->
+      <section class="page" id="page-learn" aria-label="Learn">
+        <header class="page-head">
+          <div>
+            <h1>Learn chess</h1>
+            <p class="muted">Twelve short, interactive lessons — every one is played out on a real board.</p>
+          </div>
+          <span class="badge" id="lesson-progress">0 / 12 complete</span>
+        </header>
+
+        <div class="lesson-browser" id="lesson-browser">
+          <div class="lesson-tabs" id="lesson-tabs"></div>
+          <div class="lesson-grid" id="lesson-grid"></div>
+        </div>
+
+        <div class="lesson-runner" id="lesson-runner" hidden>
+          <div class="runner-board">
+            <div class="board" id="lesson-board" role="grid" aria-label="Lesson board"></div>
+          </div>
+          <div class="runner-panel">
+            <button class="link" type="button" id="lesson-back">&larr; All lessons</button>
+            <h2 id="lesson-title">Lesson</h2>
+            <p class="muted" id="lesson-summary"></p>
+            <div class="goal">
+              <span class="field-label">Your task</span>
+              <p id="lesson-goal"></p>
+            </div>
+            <div class="lesson-status">
+              <span class="badge" id="lesson-step">Step 1</span>
+              <span class="muted small" id="lesson-minutes"></span>
+            </div>
+            <div class="verdict" id="lesson-note">
+              <span class="verdict-label" id="lesson-note-label">Ready</span>
+              <p id="lesson-note-text">Make the move the lesson asks for.</p>
+            </div>
+            <div class="row-buttons">
+              <button class="btn" type="button" id="lesson-hint">Hint</button>
+              <button class="btn" type="button" id="lesson-restart">Restart</button>
+              <button class="btn primary" type="button" id="lesson-next" hidden>Next lesson</button>
+            </div>
+            <p class="tip" id="lesson-tip"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================== SETTINGS ========================= -->
+      <section class="page" id="page-settings" aria-label="Settings">
+        <header class="page-head">
+          <div>
+            <h1>Settings</h1>
+            <p class="muted">Board look, engine and coaching defaults.</p>
+          </div>
+        </header>
+
+        <div class="settings-grid">
+          <section class="card wide">
+            <h2>Board theme</h2>
+            <p class="muted small">Pick the colours you like to look at.</p>
+            <div class="themes" id="themes"></div>
+          </section>
+
+          <section class="card wide">
+            <h2>Gameplay</h2>
+            <div class="toggle-row">
+              <div>
+                <strong>Evaluation bar</strong>
+                <p class="muted small">Animated +/− score next to the board.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="eval-toggle" checked />
+                <span class="switch-track"></span>
+              </label>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <strong>Coach mode by default</strong>
+                <p class="muted small">Reviews your moves and draws the better idea.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="coach-default" checked />
+                <span class="switch-track"></span>
+              </label>
+            </div>
+          </section>
+
+          <section class="card wide">
+            <h2>Engine</h2>
+            <p class="muted small">
+              This browser build ships its own engine: a negamax search with alpha-beta pruning,
+              quiescence and piece-square tables, running in a web worker so the board never freezes.
+              The desktop app additionally drives Stockfish when one is installed.
+            </p>
+            <div class="engine-line"><span class="dot"></span><span id="engine-name">Web engine · ready</span></div>
+          </section>
+
+          <section class="card wide">
+            <h2>About</h2>
+            <p class="muted">
+              Chess Coach is a PySide6 + python-chess desktop trainer with a 1–100 adaptive opponent,
+              a live move coach and twelve interactive lessons. This page is the browser build of the
+              same app, sharing its palette, board themes, lessons and coach grading.
+            </p>
+            <p class="small"><a class="link" href="https://github.com/Zetaworksofficial/chess-coach" target="_blank" rel="noreferrer">Source on GitHub →</a></p>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
