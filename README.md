@@ -9,6 +9,14 @@ pip install -r requirements.txt
 python main.py
 ```
 
+## Play in the browser
+
+A PySide6 window cannot run on a web host, so the same board, coach, 1–100 level scale and 12 lessons are also built as a static site — no install, no login:
+
+**https://chess-coach-six-tau.vercel.app**
+
+It lives in [`web/`](web) and deploys to Vercel straight from this repository (project root directory: `web`). The browser build vendors [chess.js](https://github.com/jhlywa/chess.js) for the rules and runs a port of the same negamax engine in a web worker, so the board never blocks. The desktop app below remains the full PySide6 version, including Stockfish support.
+
 ## Highlights
 
 - **Accurate chess rules** — legal move generation, castling, en passant, promotion dialogs, check/checkmate/stalemate, threefold repetition, the fifty-move rule and insufficient material all come from `python-chess`.
@@ -93,6 +101,15 @@ lessons/
   curriculum.py          12 structured lessons
 assets/pieces/           12 generated SVG pieces (never Unicode glyphs)
 requirements.txt
+web/                     browser build served by Vercel
+  index.html             page markup
+  styles.css             shared palette, board themes and layout
+  js/app.js              board interaction, game flow, coach card, lessons
+  js/engine.js           browser port of the fallback engine
+  js/coach.js            browser port of the coach
+  js/curriculum.js       the same 12 lessons
+  js/vendor/             vendored chess.js (BSD-2-Clause) + licence
+  assets/pieces/         the same SVG pieces
 ```
 
 ## Settings
