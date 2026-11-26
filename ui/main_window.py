@@ -34,6 +34,7 @@ from engine.fallback_engine import PIECE_VALUES
 from lessons.curriculum import LESSONS
 from .board_widget import BoardStage, BoardWidget
 from .eval_bar import EvalBar
+from .game_over_dialog import GameOverDialog
 from .lessons_view import LessonsView
 from .player_bar import PlayerBar
 from .sidebar import SegmentedControl, Sidebar, ToggleSwitch
@@ -157,6 +158,7 @@ class MainWindow(QMainWindow):
         self._clock_last = time.monotonic()
         self.engine_name = "Built-in engine"
         self._coach_arrow: Optional[chess.Move] = None
+        self._game_over_dialog: Optional[GameOverDialog] = None
         self._ai_level_live = self.ai_level
         self._ai_triggered = True
         self._coach_pending = False
@@ -556,6 +558,7 @@ class MainWindow(QMainWindow):
     # Game lifecycle
     # ==================================================================
     def _start_new_game(self, config: dict) -> None:
+        self._close_game_over_dialog()
         level = int(config.get("level", self.ai_level))
         side = config.get("side", "White")
         time_control = config.get("time", "Untimed")
@@ -1121,9 +1124,48 @@ class MainWindow(QMainWindow):
         elif outcome.winner == self.human_color:
             self.result_text = "Checkmate — you win!"
             self.result_tone = "good"
+            self._show_checkmate(human_won=True)
         else:
             self.result_text = "Checkmate — the engine wins."
             self.result_tone = "bad"
+            self._show_checkmate(human_won=False)
+
+    def _show_checkmate(self, human_won: bool) -> None:
+        """Open the result card. Non-blocking, so the move flow can finish."""
+        self._close_game_over_dialog()
+        outcome = self.board.outcome(claim_draw=True)
+        winner = outcome.winner if outcome is not None else None
+        dialog = GameOverDialog(
+            human_won=human_won,
+            winner_white=winner == chess.WHITE,
+            moves=max(1, (len(self.history) + 1) // 2),
+            level=self._ai_level_live,
+            parent=self,
+        )
+        dialog.rematch_requested.connect(self._on_rematch)
+        dialog.finished.connect(lambda _code, d=dialog: self._forget_game_over(d))
+        self._game_over_dialog = dialog
+        dialog.open()
+
+    def _on_rematch(self) -> None:
+        self._close_game_over_dialog()
+        self._start_new_game(
+            {
+                "level": self._ai_level_live,
+                "side": "White" if self.human_color == chess.WHITE else "Black",
+                "time": self.time_control,
+            }
+        )
+
+    def _forget_game_over(self, dialog: GameOverDialog) -> None:
+        if self._game_over_dialog is dialog:
+            self._game_over_dialog = None
+
+    def _close_game_over_dialog(self) -> None:
+        dialog = self._game_over_dialog
+        self._game_over_dialog = None
+        if dialog is not None:
+            dialog.close()
 
     # ==================================================================
     def closeEvent(self, event) -> None:  # noqa: N802 - Qt API

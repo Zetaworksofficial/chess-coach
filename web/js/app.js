@@ -482,6 +482,13 @@ const ui = {
   lessonNext: $('lesson-next'),
   lessonBack: $('lesson-back'),
   lessonTip: $('lesson-tip'),
+  gameover: $('gameover'),
+  gameoverPiece: $('gameover-piece'),
+  gameoverKicker: $('gameover-kicker'),
+  gameoverSub: $('gameover-sub'),
+  gameoverDetail: $('gameover-detail'),
+  gameoverRematch: $('gameover-rematch'),
+  gameoverClose: $('gameover-close'),
 };
 
 const board = new BoardView(ui.board, { onMove: onBoardMove });
@@ -657,6 +664,22 @@ function verdictTone(label) {
   return 'idle';
 }
 
+/* -------------------------------------------------------- checkmate popup */
+
+function openGameOver({ kicker, subtitle, subtitleTone = '', detail = '', piece = 'wK' }) {
+  ui.gameoverKicker.textContent = kicker;
+  ui.gameoverSub.textContent = subtitle;
+  ui.gameoverSub.className = `gameover-sub${subtitleTone ? ` is-${subtitleTone}` : ''}`;
+  ui.gameoverDetail.textContent = detail;
+  ui.gameoverPiece.src = `assets/pieces/${piece}.svg`;
+  ui.gameover.hidden = false;
+  window.setTimeout(() => ui.gameoverRematch.focus({ preventScroll: true }), 30);
+}
+
+function closeGameOver() {
+  ui.gameover.hidden = true;
+}
+
 /* ------------------------------------------------------------- game engine */
 
 function checkGameOver() {
@@ -668,9 +691,17 @@ function checkGameOver() {
   if (chess.isCheckmate()) {
     const winnerIsWhite = chess.turn() === 'b';
     const humanWon = winnerIsWhite === (game.human === 'w');
+    const moves = Math.max(1, Math.ceil(game.history.length / 2));
     text = `Checkmate — ${winnerIsWhite ? 'White' : 'Black'} wins.`;
     tone = humanWon ? 'good' : 'bad';
     label = humanWon ? 'You won' : 'Checkmate';
+    openGameOver({
+      kicker: `${winnerIsWhite ? 'White' : 'Black'} wins`,
+      subtitle: humanWon ? 'You won' : 'You lost',
+      subtitleTone: humanWon ? 'win' : 'loss',
+      detail: `Checkmate after ${moves} move${moves === 1 ? '' : 's'} against level ${game.level}.`,
+      piece: `${humanWon ? game.human : other(game.human)}K`,
+    });
   } else if (chess.isStalemate()) {
     text = 'Stalemate — the game is drawn.';
     label = 'Draw';
@@ -852,6 +883,7 @@ function askPromotion(types) {
 /* ------------------------------------------------------------ game actions */
 
 function startNewGame() {
+  closeGameOver();
   game.generation += 1;
   const side = ui.sideSeg.querySelector('.is-active').dataset.value;
   game.human = side === 'Random' ? (Math.random() < 0.5 ? 'w' : 'b') : side === 'Black' ? 'b' : 'w';
@@ -1276,6 +1308,15 @@ function wire() {
   ui.lessonHint.addEventListener('click', lessonHint);
   ui.lessonRestart.addEventListener('click', restartLesson);
   ui.lessonNext.addEventListener('click', nextLesson);
+
+  ui.gameoverRematch.addEventListener('click', () => {
+    closeGameOver();
+    startNewGame();
+  });
+  ui.gameoverClose.addEventListener('click', closeGameOver);
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !ui.gameover.hidden) closeGameOver();
+  });
 }
 
 function boot() {

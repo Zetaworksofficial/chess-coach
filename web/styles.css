@@ -1179,6 +1179,118 @@ input[type="range"]::-moz-range-thumb {
   display: none;
 }
 
+/* ------------------------------------------------------------ checkmate */
+.gameover {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(18, 17, 16, 0.62);
+  border-radius: 4px;
+  z-index: 30;
+  animation: gameover-fade 0.18s ease-out;
+}
+
+.gameover[hidden] {
+  display: none;
+}
+
+.gameover-card {
+  width: min(100%, 330px);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 18px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  animation: gameover-pop 0.24s cubic-bezier(0.2, 0.9, 0.3, 1.15);
+}
+
+.gameover-piece {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 2px;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.45));
+}
+
+.gameover-kicker {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.gameover-card h2 {
+  font-size: 23px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.gameover-sub {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.gameover-sub.is-win {
+  color: var(--accent);
+}
+
+.gameover-sub.is-loss {
+  color: #e8837b;
+}
+
+.gameover-detail {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.gameover-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  margin-top: 12px;
+}
+
+.gameover-actions .btn {
+  flex: 1;
+}
+
+@keyframes gameover-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes gameover-pop {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gameover,
+  .gameover-card {
+    animation: none;
+  }
+}
+
 .board.is-lesson {
   max-width: 520px;
 }
